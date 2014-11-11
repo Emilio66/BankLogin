@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>登陆</title>
+
+<link rel="stylesheet" type="text/css" href="$rc.contextPath/base/css/welcome.css"/>
+<script type="text/javascript" src="$rc.contextPath/base/js/jquery.min.js"> </script>
+<script type="text/javascript" src="http://counter.sina.com.cn/ip/" ></script>  <!--通过新浪服务器获取接口数据，返回IP -->  
+
+<script type="text/javascript">
+	var message;	
+	var isMatch=true;
+	var isExist=false;
+	var ip=ILData[0];
+	$(document).ready(function(){
+		
+		//输入验证码完成按回车即可响应
+		$("#code").keydown(function(event) {
+			if (event.keyCode == 13) {
+				submitLogin();//调用submitLogin函数
+			}
+		});
+		//登陆与注册是滑动效果
+		$("#log").click(function(){
+			$(".box_l").animate({bottom:300},600);
+			$(".box_r").animate({bottom:-400},600);
+		});
+		$("#reg").click(function(){
+			$(".box_l").animate({bottom:-300},600);
+			$(".box_r").animate({bottom:240},600);			
+		});		
+		
+	});
+	
+	//刷新验证码，重新定义image src 的请求路径
+	function changeCode(){	
+		$("#codeImg").attr("src","$rc.contextPath/code?t="+Math.random());//为了不让浏览器缓存，以随机数作为参数
+	}
+	
+	//登陆验证
+	function submitLogin(){
+		var name=$.trim($("#username").val());//去掉前后空格
+		var pwd=$.trim($("#password").val());
+		var code=$.trim($("#vcode").val());
+		
+		if(pwd!=null && pwd.length <6){
+			alert("密码少于6位，非正确形式的密码");
+		}
+		
+		if(name!=null && name.length>0 && pwd!=null && name.length>0 && code!=null && code.length>0){
+			//通过ajax异步提交到后台
+			$.post("$rc.contextPath/login",
+				{username:name,password:pwd,ipAddr:ip,vcode:code,format:"json"},
+				function(data){				
+					if(data.model.result=="pass"){
+						window.location.assign("http://www.citibank.com.cn/");//跳转到花旗银行主页
+					}else if(data.model.result=="name"){
+						alert("用户名或密码错误");
+					}else{
+						alert("验证码输入错误");
+					}
+				},
+			"json");
+		}else{
+			alert("用户名、密码、验证码不能为空");
+		}
+	}
+	
+	//检查用户名是否已经存在
+	function checkName(){
+		var name=$.trim($("#name").val());
+		
+		$.post("$rc.contextPath/isExist",{name:name},function(data){
+			if(data.model.exist==true){
+				isExist=true;
+				alert("抱歉，用户名已存在");
+			}else{
+				isExist=false;
+			}
+		});
+	}
+	
+	//检查注册的时候两次密码是否一致，长度是否正确
+	function checkPwd(){
+		var pwd1=$.trim($("#pwd1").val());
+		var pwd2=$.trim($("#pwd2").val());
+		if(pwd1!=pwd2){
+			isMatch=false;
+			message="两次密码不一致，请修改";
+			alert(message);
+			return;
+		}else if(pwd1.length<6){
+			isMatch=false;
+			message="密码长度至少6位";
+			alert(message);
+			return;
+		}else{
+			isMatch=true;
+		}
+	}
+	
+	function checkRegisterInfo(){
+		if(isMatch==false){
+			alert(message);
+			return;
+		}else
+		if(isExist==true){
+			alert("该用户名已存在，请更换");
+			return;
+		}else{
+			var name=$.trim($("#name").val());
+			var pwd=$.trim($("#pwd1").val());
+			$.post("$rc.contextPath/register",{name:name,password:pwd},
+				function(data){
+					alert("注册成功，请登录~~");			
+				});
+		}
+	}
+	
+	//登陆与注册按钮图片切换 	
+	function changeToLog( obj ){		
+		document.getElementById("log").src = '$rc.contextPath/base/image/login_on.png';
+		document.getElementById("reg").src = '$rc.contextPath/base/image/regis_off.png';
+	}
+	function changeToReg( obj ){		
+		document.getElementById("log").src = '$rc.contextPath/base/image/login_off.png';
+		document.getElementById("reg").src = '$rc.contextPath/base/image/regis_on.png';
+	}
+</script>
+</head>
+<body class="bg">
+<!--  登陆！ -->
+	<div class="box box_l" >       
+     <form action="$rc.contextPath/login" id="loginForm" method="post"><br />
+		<input type="text" name="username" id="username" class="txt txt_l" style="width:220px" />
+		<input type="password" name="password" id="password" class="txt txt_l" style="width:220px"/>
+		 <input type="text" id="vcode" name="vcode" class="txt_l" style="width:70px;float:left"/>&nbsp;&nbsp;
+		 <!-- 验证码 -->
+		 <img id="codeImg" style="filter:alpha(opacity=50,Style=0);float:left" 
+		 	src="$rc.contextPath/code" />
+		 &nbsp;&nbsp;<a href="#" onclick="changeCode()">换一个</a>
+		 <input type="hidden" id="ipAddr" name="ip" />
+		<input type="button" class="btn btn_l"  value="登陆" onclick="submitLogin()"/>
+	</form>
+	 <!-- 输出错误信息 -->
+	 <div style="display:block" id="warning">
+    	
+     </div>
+    </div>
+<!--  注册 -->    
+    <div class="box box_r">
+        <form action="$rc.contextPath/register" id="registerForm" method="post">   	
+            <div class="item">
+            	<label class="item_1 font">用户名</label>
+                <input type="text" class="txt item_2" id="name" onblur="checkName()"
+                	name="name" maxlength="10"/>
+            </div>
+            <div class="item">
+            	<label class="item_1 font">密码</label>
+                <input type="password" class="txt item_2" name="password" id="pwd1" />
+            </div>
+            <div class="item">
+            	<label class="item_1 font">确认密码</label>
+                <input type="password" class="txt item_2" id="pwd2" onblur="checkPwd()"/>
+            </div>        
+			<br>
+            <div class="item">            	
+            	<input class="btn btn_l" type="submit" onclick="checkRegisterInfo()" value="立即注册" />
+            </div>
+        </form>
+        
+    </div>
+<!--  登陆与注册按钮 -->
+    <div style="text-align:center;position:absolute;left:46%;bottom:20%;">
+    	<img id="log" class="ch" style="filter:alpha(opacity=50,Style=0);" src="$rc.contextPath/base/image/login_on.png" onclick="changeToLog(this)"/>
+        <img id="reg" class="ch" src="$rc.contextPath/base/image/regis_off.png" onclick="changeToReg(this)"/>
+    </div>
+</body>
+
+</html>
